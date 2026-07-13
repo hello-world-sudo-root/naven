@@ -51,4 +51,4 @@ jobs:
           files: build/libs/*.jar
           overwrite_files: true              # 覆盖已存在的附件（替换旧 jar）
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
