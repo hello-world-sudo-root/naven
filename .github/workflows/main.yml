@@ -4,12 +4,15 @@ on:
   # 每天 UTC 0:00 触发（北京时间 8:00）
   schedule:
     - cron: '0 0 * * *'
-  # 允许手动触发，方便测试
+  # 支持手动触发
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 关键：授予对仓库内容的写入权限（创建/更新 Release）
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -27,25 +30,25 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      # 可选：保留构建产物作为 Action Artifacts（方便在 Actions 页面下载）
+      # 保留构建产物作为 Artifact（可选）
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: naven-modern-build
           path: build/libs/*.jar
 
-      # 自动发布到 GitHub Releases（预发布，每日覆盖）
+      # 发布到 GitHub Releases
       - name: Create Daily Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: daily                     # 固定标签，每日覆盖
+          tag_name: daily                    # 固定标签，每日覆盖
           name: Daily Build (latest)
           body: |
             自动每日构建，基于 commit `${{ github.sha }}`
             触发时间：${{ github.event.head_commit.timestamp || github.run_attempt }}
           draft: false
-          prerelease: true                    # 标记为预发布
+          prerelease: true                   # 预发布
           files: build/libs/*.jar
-          allow_updates: true                 # 允许更新已存在的 release
+          overwrite_files: true              # 覆盖已存在的附件（替换旧 jar）
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
