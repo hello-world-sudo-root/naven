@@ -1,0 +1,117 @@
+plugins {
+	id 'fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+loom {
+	mixin {
+		defaultRefmapName.set("naven-modern.refmap.json")
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = "Fabric"
+		url = "https://maven.fabricmc.net/"
+	}
+	maven {
+		name = "Terraformers"
+		url = "https://maven.terraformersmc.com/releases/"
+	}
+	maven {
+		name = "IAS Maven"
+		url = "https://maven.theillusivec4.top/"
+	}
+}
+
+fabricApi {
+	configureDataGeneration {
+		client = true
+	}
+}
+
+dependencies {
+	// Minecraft
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	//modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+	//modImplementation "top.theillusivec4.ias:ias-fabric:${project.ias_version}"
+	implementation "org.antlr:antlr4-runtime:4.13.1"
+	compileOnly fileTree(dir: "run/mods", include: "ViaFabricPlus-*.jar")
+	compileOnly fileTree(dir: "run/mods/.compileOnly", include: "*.jar")
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 17
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+	inputs.property "archivesName", project.base.archivesName
+	from("LICENSE") {
+		rename { "${it}_${inputs.properties.archivesName}" }
+	}
+}
+
+tasks.named("remapJar") {
+	archiveFileName = "Naven-Modern-260604-Fix2.jar"
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
+	}
+	repositories {
+	}
+}
+task exportDeps(type: Copy) {
+	from configurations.runtimeClasspath
+	into 'build/exported-deps'
+	eachFile {
+		def originalName = it.file.name
+		def matcher = originalName =~ /(.+)-([0-9.]+[0-9a-z.-]*)\.jar/
+		if (matcher.find()) {
+			it.name = matcher.group(1) + "-" + matcher.group(2) + ".jar"
+		}
+	}
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task listDeps {
+	doLast {
+		configurations.runtimeClasspath.each { file ->
+			println file.name
+		}
+	}
+}

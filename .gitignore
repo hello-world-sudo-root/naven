@@ -1,0 +1,9 @@
+/.gradle/
+/build/
+/logs/
+/.idea/inspectionProfiles/
+/run/*
+!/run/mods/
+/run/mods/*
+!/run/mods/.compileOnly/
+!/run/mods/.compileOnly/*.jar
